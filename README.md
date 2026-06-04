@@ -288,7 +288,7 @@ SQS-style async vs. edge caching), see the discussion in the project notes.
 
 ---
 
-## Logging & resilience
+## Logging, resilience & observability
 
 - `HttpLogging` records method, path, query, status, and duration per request.
 - `PurchaseService` logs each store and each conversion (with the 6-month window),
@@ -299,6 +299,25 @@ SQS-style async vs. edge caching), see the discussion in the project notes.
   (5xx/408/429), per-attempt + total timeouts, and a failure-ratio circuit breaker.
   Retry count/delay and the per-attempt timeout are tunable via the `Treasury`
   options section, validated at startup.
+
+**Distributed tracing (intended).** Beyond the structured logs above, this service
+should export **traces** to an observability framework — **OpenTelemetry**, emitting
+OTLP to a collector/APM (e.g. Jaeger, Tempo, Application Insights). ASP.NET Core and
+`HttpClient` already produce `Activity` spans for the incoming request and the
+outbound Treasury call, so enabling this is purely additive: the exporter and
+instrumentation are wired in the **composition root (`Program.cs`)**, with the
+collector endpoint supplied via configuration — for example:
+
+```csharp
+builder.Services.AddOpenTelemetry()
+    .WithTracing(t => t
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddOtlpExporter());
+```
+
+No domain or infrastructure changes are required; the cross-cutting concern stays at
+the edge, consistent with the rest of the architecture.
 
 ---
 
