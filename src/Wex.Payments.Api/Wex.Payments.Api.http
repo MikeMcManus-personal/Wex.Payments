@@ -1,0 +1,82 @@
+@HostAddress = http://localhost:5121
+
+# Wex.Payments - Purchase Transaction & Currency Conversion API
+#
+# How to use:
+#   1) Start the service:  dotnet run --project src/Wex.Payments.Api   (from C:\wex)
+#   2) Click "Send Request" above any call below
+#      (Visual Studio 2022, VS Code "REST Client" extension, or JetBrains Rider).
+#
+# Run "Store a purchase" FIRST - the GET calls below reuse the id it returns,
+# so there is no need to copy/paste it.
+#
+# Note: the /converted calls hit the LIVE U.S. Treasury API and need network access.
+
+### Health check  ->  200 { "status": "ok" }
+GET {{HostAddress}}/health
+Accept: application/json
+
+### Requirement #1 - Store a purchase  ->  201 Created (Location header + new id)
+# @name storePurchase
+POST {{HostAddress}}/api/v1/purchases
+Content-Type: application/json
+
+{
+  "description": "Laptop",
+  "transactionDate": "2024-06-30",
+  "amountUsd": 100.00
+}
+
+### Fetch the stored purchase by id  ->  200 (reuses the id from the store call)
+GET {{HostAddress}}/api/v1/purchases/{{storePurchase.response.body.$.id}}
+Accept: application/json
+
+### Requirement #2 - Convert to Brazil-Real  ->  200 (about 550.00 for $100 on 2024-06-30)
+# Smart Conversion: latest Treasury rate with record_date <= purchase date, within 6 months.
+GET {{HostAddress}}/api/v1/purchases/{{storePurchase.response.body.$.id}}/converted?currency=Brazil-Real
+Accept: application/json
+
+### Convert to Euro Zone-Euro  ->  200  (note: the space is URL-encoded as %20)
+GET {{HostAddress}}/api/v1/purchases/{{storePurchase.response.body.$.id}}/converted?currency=Euro%20Zone-Euro
+Accept: application/json
+
+### Convert to Canada-Dollar  ->  200
+GET {{HostAddress}}/api/v1/purchases/{{storePurchase.response.body.$.id}}/converted?currency=Canada-Dollar
+Accept: application/json
+
+
+############################################################################
+# Error model - each call demonstrates one status code from the README table
+############################################################################
+
+### 400 Validation - description exceeds 50 characters
+POST {{HostAddress}}/api/v1/purchases
+Content-Type: application/json
+
+{
+  "description": "This description is deliberately longer than the fifty character limit",
+  "transactionDate": "2024-06-30",
+  "amountUsd": 10.00
+}
+
+### 400 Validation - amount has more than two decimal places
+POST {{HostAddress}}/api/v1/purchases
+Content-Type: application/json
+
+{
+  "description": "Too precise",
+  "transactionDate": "2024-06-30",
+  "amountUsd": 10.005
+}
+
+### 400 Validation - missing 'currency' query parameter
+GET {{HostAddress}}/api/v1/purchases/{{storePurchase.response.body.$.id}}/converted
+Accept: application/json
+
+### 404 Not Found - unknown purchase id
+GET {{HostAddress}}/api/v1/purchases/00000000-0000-0000-0000-000000000000/converted?currency=Brazil-Real
+Accept: application/json
+
+### 422 Unprocessable - no Treasury rate for this currency (business error)
+GET {{HostAddress}}/api/v1/purchases/{{storePurchase.response.body.$.id}}/converted?currency=Atlantis-Crystal
+Accept: application/json

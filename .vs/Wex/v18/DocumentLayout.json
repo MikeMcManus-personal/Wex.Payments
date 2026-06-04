@@ -1,0 +1,113 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Wex\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{9DD58184-87AC-455D-A0A8-3E61D39ABF91}|src\\Wex.Api\\Wex.Api.csproj|c:\\wex\\src\\wex.api\\wex.api.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}",
+      "RelativeMoniker": "D:0:0:{9DD58184-87AC-455D-A0A8-3E61D39ABF91}|src\\Wex.Api\\Wex.Api.csproj|solutionrelative:src\\wex.api\\wex.api.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B329A19-BC9A-4F11-8D9C-A326BA596564}|src\\Wex.Core\\Wex.Core.csproj|c:\\wex\\src\\wex.core\\services\\purchaseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4B329A19-BC9A-4F11-8D9C-A326BA596564}|src\\Wex.Core\\Wex.Core.csproj|solutionrelative:src\\wex.core\\services\\purchaseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9DD58184-87AC-455D-A0A8-3E61D39ABF91}|src\\Wex.Api\\Wex.Api.csproj|c:\\wex\\src\\wex.api\\validation\\storepurchaserequestvalidator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9DD58184-87AC-455D-A0A8-3E61D39ABF91}|src\\Wex.Api\\Wex.Api.csproj|solutionrelative:src\\wex.api\\validation\\storepurchaserequestvalidator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9DD58184-87AC-455D-A0A8-3E61D39ABF91}|src\\Wex.Api\\Wex.Api.csproj|c:\\wex\\src\\wex.api\\endpoints\\purchaseendpoints.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9DD58184-87AC-455D-A0A8-3E61D39ABF91}|src\\Wex.Api\\Wex.Api.csproj|solutionrelative:src\\wex.api\\endpoints\\purchaseendpoints.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9DD58184-87AC-455D-A0A8-3E61D39ABF91}|src\\Wex.Api\\Wex.Api.csproj|c:\\wex\\src\\wex.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9DD58184-87AC-455D-A0A8-3E61D39ABF91}|src\\Wex.Api\\Wex.Api.csproj|solutionrelative:src\\wex.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{c6f34f0d-7ae5-4f3a-be61-fe0c21ae9eb8}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{eefa5220-e298-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Wex.Api.http",
+              "DocumentMoniker": "C:\\Wex\\src\\Wex.Api\\Wex.Api.http",
+              "RelativeDocumentMoniker": "src\\Wex.Api\\Wex.Api.http",
+              "ToolTip": "C:\\Wex\\src\\Wex.Api\\Wex.Api.http",
+              "RelativeToolTip": "src\\Wex.Api\\Wex.Api.http",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAABIAAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003502|",
+              "WhenOpened": "2026-06-04T13:44:14.078Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "StorePurchaseRequestValidator.cs",
+              "DocumentMoniker": "C:\\Wex\\src\\Wex.Api\\Validation\\StorePurchaseRequestValidator.cs",
+              "RelativeDocumentMoniker": "src\\Wex.Api\\Validation\\StorePurchaseRequestValidator.cs",
+              "ToolTip": "C:\\Wex\\src\\Wex.Api\\Validation\\StorePurchaseRequestValidator.cs",
+              "RelativeToolTip": "src\\Wex.Api\\Validation\\StorePurchaseRequestValidator.cs",
+              "ViewState": "AgIAAAcAAAAAAAAAAIAwwBwAAAAxAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-04T13:27:50.09Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "PurchaseService.cs",
+              "DocumentMoniker": "C:\\Wex\\src\\Wex.Core\\Services\\PurchaseService.cs",
+              "RelativeDocumentMoniker": "src\\Wex.Core\\Services\\PurchaseService.cs",
+              "ToolTip": "C:\\Wex\\src\\Wex.Core\\Services\\PurchaseService.cs",
+              "RelativeToolTip": "src\\Wex.Core\\Services\\PurchaseService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAABWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-04T12:27:14.326Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "PurchaseEndpoints.cs",
+              "DocumentMoniker": "C:\\Wex\\src\\Wex.Api\\Endpoints\\PurchaseEndpoints.cs",
+              "RelativeDocumentMoniker": "src\\Wex.Api\\Endpoints\\PurchaseEndpoints.cs",
+              "ToolTip": "C:\\Wex\\src\\Wex.Api\\Endpoints\\PurchaseEndpoints.cs",
+              "RelativeToolTip": "src\\Wex.Api\\Endpoints\\PurchaseEndpoints.cs",
+              "ViewState": "AgIAAEEAAAAAAAAAAAAgwFAAAAAqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-04T12:23:56.738Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Wex\\src\\Wex.Api\\Program.cs",
+              "RelativeDocumentMoniker": "src\\Wex.Api\\Program.cs",
+              "ToolTip": "C:\\Wex\\src\\Wex.Api\\Program.cs",
+              "RelativeToolTip": "src\\Wex.Api\\Program.cs",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAAAB0AAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-04T12:21:27.055Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
