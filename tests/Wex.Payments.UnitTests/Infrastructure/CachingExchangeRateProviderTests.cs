@@ -13,6 +13,7 @@ public sealed class CachingExchangeRateProviderTests
 {
     private static readonly DateOnly OnOrBefore = new(2024, 6, 30);
     private static readonly DateOnly NotBefore = new(2023, 12, 30);
+    private static readonly ExchangeRateCacheOptions Defaults = new();
 
     private Mock<IExchangeRateProvider> _innerMock = null!;
     private MemoryCache _cache = null!;
@@ -121,6 +122,49 @@ public sealed class CachingExchangeRateProviderTests
             p => p.GetLatestRateOnOrBeforeAsync(
                 "Brazil-Real", purchaseDate, notBefore, It.IsAny<CancellationToken>()),
             Times.Exactly(2));
+    }
+
+    [Test]
+    public void ComputeTtl_NullRate_UsesNegativeTtl()
+    {
+        var today = new DateOnly(2026, 6, 4);
+
+        Assert.That(
+            _sut.ComputeTtl(null, new DateOnly(2024, 1, 1), today),
+            Is.EqualTo(Defaults.NegativeTtl));
+    }
+
+    [Test]
+    public void ComputeTtl_RecentRecordDate_OldPurchase_UsesRecentTtl()
+    {
+        var today = new DateOnly(2026, 6, 4);
+        var rate = new ExchangeRate("X-Y", 1.0m, new DateOnly(2026, 5, 1)); // within RecentWindowDays
+
+        Assert.That(
+            _sut.ComputeTtl(rate, new DateOnly(2024, 1, 1), today), // old purchase
+            Is.EqualTo(Defaults.RecentTtl));
+    }
+
+    [Test]
+    public void ComputeTtl_OldRate_RecentPurchase_UsesRecentTtl()
+    {
+        var today = new DateOnly(2026, 6, 4);
+        var rate = new ExchangeRate("X-Y", 1.0m, new DateOnly(2024, 1, 1)); // old
+
+        Assert.That(
+            _sut.ComputeTtl(rate, new DateOnly(2026, 5, 1), today), // recent purchase
+            Is.EqualTo(Defaults.RecentTtl));
+    }
+
+    [Test]
+    public void ComputeTtl_OldRate_OldPurchase_UsesHistoricalTtl()
+    {
+        var today = new DateOnly(2026, 6, 4);
+        var rate = new ExchangeRate("X-Y", 1.0m, new DateOnly(2024, 1, 1));
+
+        Assert.That(
+            _sut.ComputeTtl(rate, new DateOnly(2024, 3, 1), today),
+            Is.EqualTo(Defaults.HistoricalTtl));
     }
 
     private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider

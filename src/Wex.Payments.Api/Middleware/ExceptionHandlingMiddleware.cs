@@ -49,6 +49,16 @@ public sealed class ExceptionHandlingMiddleware
                 title: "Upstream provider error",
                 detail: ex.Message);
         }
+        catch (BadHttpRequestException ex)
+        {
+            // Malformed request body (e.g. an unparseable transactionDate). Surfaced here via
+            // RouteHandlerOptions.ThrowOnBadRequest so it returns uniform problem+json. The raw
+            // input is intentionally not echoed back.
+            _logger.LogInformation(ex, "Malformed request body");
+            await WriteProblemAsync(context, StatusCodes.Status400BadRequest,
+                title: "Invalid request",
+                detail: "The request body could not be read. Check field types and formats (e.g. transactionDate must be a valid date).");
+        }
         catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
         {
             _logger.LogInformation("Request was cancelled by the client");

@@ -51,6 +51,15 @@ public sealed class StorePurchaseRequestValidatorTests
     }
 
     [Test]
+    public void Validate_Passes_When50CharsWithSurroundingWhitespace()
+    {
+        // Trimmed length is 50, matching what the service stores after trimming.
+        var request = new StorePurchaseRequest("  " + new string('a', 50) + "  ", new DateOnly(2024, 6, 30), 1.00m);
+
+        Assert.That(_sut.Validate(request).IsValid, Is.True);
+    }
+
+    [Test]
     public void Validate_Fails_WhenDescriptionEmpty()
     {
         var request = new StorePurchaseRequest("", new DateOnly(2024, 6, 30), 1.00m);

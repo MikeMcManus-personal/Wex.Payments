@@ -3,7 +3,7 @@
 # Wex.Payments - Purchase Transaction & Currency Conversion API
 #
 # How to use:
-#   1) Start the service:  dotnet run --project src/Wex.Payments.Api   (from C:\wex)
+#   1) Start the service:  dotnet run --project src/Wex.Payments.Api   (from the repository root)
 #   2) Click "Send Request" above any call below
 #      (Visual Studio 2022, VS Code "REST Client" extension, or JetBrains Rider).
 #

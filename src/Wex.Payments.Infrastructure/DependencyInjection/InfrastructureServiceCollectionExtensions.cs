@@ -1,11 +1,10 @@
-using System.Net;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;
-using Polly.Extensions.Http;
 using Refit;
 using Wex.Payments.Core.Abstractions;
 using Wex.Payments.Infrastructure.Treasury;
@@ -23,15 +22,35 @@ public static class InfrastructureServiceCollectionExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        var treasury = configuration.GetSection(TreasuryOptions.SectionName).Get<TreasuryOptions>()
+            ?? new TreasuryOptions();
+
         services.AddRefitClient<ITreasuryFiscalDataApi>()
             .ConfigureHttpClient((sp, client) =>
             {
                 var opts = sp.GetRequiredService<IOptions<TreasuryOptions>>().Value;
                 client.BaseAddress = new Uri(opts.BaseUrl);
-                client.Timeout = TimeSpan.FromSeconds(opts.TimeoutSeconds);
+                // The resilience pipeline owns timeouts (per-attempt + total), so let it govern.
+                client.Timeout = Timeout.InfiniteTimeSpan;
             })
-            .AddPolicyHandler((sp, _) => BuildRetryPolicy(sp))
-            .AddPolicyHandler(BuildCircuitBreakerPolicy());
+            // Polly v8 standard pipeline: rate limiter, total timeout, retry, attempt timeout,
+            // circuit breaker. Replaces the legacy Polly.Extensions.Http wiring.
+            .AddStandardResilienceHandler(options =>
+            {
+                options.Retry.MaxRetryAttempts = treasury.RetryCount;
+                options.Retry.Delay = TimeSpan.FromMilliseconds(treasury.RetryBaseDelayMs);
+                options.Retry.BackoffType = DelayBackoffType.Exponential;
+                options.Retry.UseJitter = true;
+
+                // TimeoutSeconds is the per-attempt budget; the total must exceed a single
+                // attempt, and the breaker's sampling window must be >= 2x the attempt timeout.
+                var attempt = TimeSpan.FromSeconds(treasury.TimeoutSeconds);
+                options.AttemptTimeout.Timeout = attempt;
+                options.TotalRequestTimeout.Timeout =
+                    TimeSpan.FromSeconds(treasury.TimeoutSeconds * (treasury.RetryCount + 2));
+                options.CircuitBreaker.SamplingDuration =
+                    TimeSpan.FromSeconds(Math.Max(treasury.TimeoutSeconds * 2, 30));
+            });
 
         services.AddMemoryCache();
 
@@ -53,23 +72,4 @@ public static class InfrastructureServiceCollectionExtensions
 
         return services;
     }
-
-    private static IAsyncPolicy<HttpResponseMessage> BuildRetryPolicy(IServiceProvider sp)
-    {
-        var opts = sp.GetRequiredService<IOptions<TreasuryOptions>>().Value;
-        return HttpPolicyExtensions
-            .HandleTransientHttpError()
-            .OrResult(r => r.StatusCode == HttpStatusCode.TooManyRequests)
-            .WaitAndRetryAsync(
-                retryCount: opts.RetryCount,
-                sleepDurationProvider: attempt =>
-                    TimeSpan.FromMilliseconds(opts.RetryBaseDelayMs * Math.Pow(2, attempt - 1)));
-    }
-
-    private static IAsyncPolicy<HttpResponseMessage> BuildCircuitBreakerPolicy() =>
-        HttpPolicyExtensions
-            .HandleTransientHttpError()
-            .CircuitBreakerAsync(
-                handledEventsAllowedBeforeBreaking: 5,
-                durationOfBreak: TimeSpan.FromSeconds(30));
 }

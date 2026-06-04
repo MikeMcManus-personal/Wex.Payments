@@ -114,6 +114,23 @@ public sealed class PurchaseServiceTests
     }
 
     [Test]
+    public async Task GetConvertedAsync_RoundsConvertedAmount_AwayFromZero_AtExactMidpoint()
+    {
+        var id = Guid.NewGuid();
+        var purchase = new PurchaseTransaction(id, "x", new DateOnly(2024, 1, 1), 1.00m);
+
+        _repoMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(purchase);
+        _providerMock
+            .Setup(p => p.GetLatestRateOnOrBeforeAsync(It.IsAny<string>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ExchangeRate("X-Y", 2.345m, new DateOnly(2023, 12, 31)));
+
+        var result = await _sut.GetConvertedAsync(id, "X-Y");
+
+        // 1.00 * 2.345 = 2.345 exactly -> away-from-zero gives 2.35 (banker's would give 2.34).
+        Assert.That(result.ConvertedAmount, Is.EqualTo(2.35m));
+    }
+
+    [Test]
     public void GetConvertedAsync_Throws422Business_WhenNoRateInWindow()
     {
         var id = Guid.NewGuid();

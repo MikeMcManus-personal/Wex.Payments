@@ -27,6 +27,10 @@ builder.Services.AddHttpLogging(o =>
 builder.Services.AddValidatorsFromAssemblyContaining<StorePurchaseRequestValidator>();
 builder.Services.AddScoped(typeof(ValidationEndpointFilter<>));
 
+// Surface request-body binding failures (e.g. an unparseable transactionDate) through the
+// exception middleware so they return a uniform problem+json 400 like every other error.
+builder.Services.Configure<RouteHandlerOptions>(o => o.ThrowOnBadRequest = true);
+
 builder.Services.AddWexPaymentsCore();
 builder.Services.AddWexPaymentsInfrastructure(builder.Configuration);
 

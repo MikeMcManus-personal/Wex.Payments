@@ -114,7 +114,7 @@ src/
                       IExchangeRateProvider + IPurchaseTransactionRepository
                       abstractions, in-memory repo, domain exceptions.
   Wex.Payments.Infrastructure  Treasury integration only. Refit ITreasuryFiscalDataApi
-                      (internal), DTOs, provider, Polly retry + circuit breaker.
+                      (internal), DTOs, provider, standard resilience handler (Polly v8).
                       Public surface = one DI extension method.
   Wex.Payments.Api             Minimal API. Endpoints, request/response contracts,
                       FluentValidation (endpoint filter), ProblemDetails
@@ -184,7 +184,7 @@ status codes, log levels, and remediation.
 ## Running
 
 ```bash
-cd C:\wex
+# from the repository root
 dotnet run --project src/Wex.Payments.Api
 ```
 
@@ -294,9 +294,11 @@ SQS-style async vs. edge caching), see the discussion in the project notes.
 - `PurchaseService` logs each store and each conversion (with the 6-month window),
   and a warning when no rate is found.
 - `TreasuryExchangeRateProvider` logs the outbound filter and any upstream error.
-- **Polly** on the Treasury `HttpClient`: exponential-backoff retry on transient
-  errors (5xx/408/429) + a circuit breaker (5 failures → open 30s). Tunable via
-  the `Treasury` options section, validated at startup.
+- **`Microsoft.Extensions.Http.Resilience`** standard pipeline (Polly v8) on the
+  Treasury `HttpClient`: exponential-backoff-with-jitter retry on transient errors
+  (5xx/408/429), per-attempt + total timeouts, and a failure-ratio circuit breaker.
+  Retry count/delay and the per-attempt timeout are tunable via the `Treasury`
+  options section, validated at startup.
 
 ---
 

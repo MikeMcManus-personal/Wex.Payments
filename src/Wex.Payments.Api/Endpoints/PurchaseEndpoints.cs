@@ -45,7 +45,7 @@ public static class PurchaseEndpoints
         CancellationToken cancellationToken)
     {
         var command = new StorePurchaseCommand(
-            request.Description.Trim(),
+            request.Description,
             request.TransactionDate,
             request.AmountUsd);
 

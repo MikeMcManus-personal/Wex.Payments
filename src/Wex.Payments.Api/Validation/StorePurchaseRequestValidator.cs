@@ -14,7 +14,10 @@ public sealed class StorePurchaseRequestValidator : AbstractValidator<StorePurch
     {
         RuleFor(x => x.Description)
             .NotEmpty().WithMessage("description is required.")
-            .MaximumLength(50).WithMessage("description must not exceed 50 characters.");
+            // Validate the trimmed length so it matches what the service stores after trimming
+            // (a 50-char description padded with whitespace is accepted, not rejected at 52).
+            .Must(d => d is null || d.Trim().Length <= 50)
+            .WithMessage("description must not exceed 50 characters.");
 
         RuleFor(x => x.AmountUsd)
             .GreaterThan(0m).WithMessage("amountUsd must be a positive amount.")

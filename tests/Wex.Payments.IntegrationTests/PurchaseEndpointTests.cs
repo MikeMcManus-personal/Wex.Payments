@@ -50,9 +50,10 @@ public sealed class PurchaseEndpointTests
 
         // Requirement #2 — retrieve converted.
         var convertedResponse = await _client.GetAsync($"{PurchasesUrl}/{id}/converted?currency=Brazil-Real");
-        Assert.That(convertedResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), await convertedResponse.Content.ReadAsStringAsync());
+        var convertedJson = await convertedResponse.Content.ReadAsStringAsync();
+        Assert.That(convertedResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), convertedJson);
 
-        using var doc = JsonDocument.Parse(await convertedResponse.Content.ReadAsStringAsync());
+        using var doc = JsonDocument.Parse(convertedJson);
         var root = doc.RootElement;
         Assert.Multiple(() =>
         {
@@ -64,6 +65,14 @@ public sealed class PurchaseEndpointTests
             Assert.That(root.GetProperty("exchangeRate").GetDecimal(), Is.EqualTo(5.165m));
             Assert.That(root.GetProperty("exchangeRateDate").GetString(), Is.EqualTo("2024-03-31"));
             Assert.That(root.GetProperty("convertedAmount").GetDecimal(), Is.EqualTo(516.50m));
+        });
+
+        // Money fields render at two decimals; the rate keeps its native precision.
+        Assert.Multiple(() =>
+        {
+            Assert.That(convertedJson, Does.Contain("\"originalAmountUsd\":100.00"));
+            Assert.That(convertedJson, Does.Contain("\"convertedAmount\":516.50"));
+            Assert.That(convertedJson, Does.Contain("\"exchangeRate\":5.165"));
         });
     }
 
@@ -101,6 +110,20 @@ public sealed class PurchaseEndpointTests
         });
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+    }
+
+    [Test]
+    public async Task StorePurchase_Returns400ProblemJson_WhenDateFormatInvalid()
+    {
+        var response = await _client.PostAsJsonAsync(PurchasesUrl, new
+        {
+            description = "Bad date",
+            transactionDate = "not-a-date",
+            amountUsd = 1.00m,
+        });
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), await response.Content.ReadAsStringAsync());
+        Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("application/problem+json"));
     }
 
     [Test]

@@ -43,9 +43,14 @@ public sealed class PurchaseService : IPurchaseService
 
         await _repository.AddAsync(transaction, cancellationToken).ConfigureAwait(false);
 
+        // Keep the monetary amount out of Information-level logs; id + date are sufficient
+        // for audit there, and the amount is available at Debug when diagnosing.
         _logger.LogInformation(
-            "Stored purchase {Id} for {Amount:F2} USD on {Date}",
-            transaction.Id, transaction.AmountUsd, transaction.TransactionDate);
+            "Stored purchase {Id} on {Date}",
+            transaction.Id, transaction.TransactionDate);
+        _logger.LogDebug(
+            "Purchase {Id} amount {Amount:F2} USD",
+            transaction.Id, transaction.AmountUsd);
 
         return transaction;
     }

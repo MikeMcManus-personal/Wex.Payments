@@ -91,7 +91,7 @@ internal sealed class CachingExchangeRateProvider : IExchangeRateProvider
         return rate;
     }
 
-    private TimeSpan ComputeTtl(ExchangeRate? rate, DateOnly onOrBefore, DateOnly today)
+    internal TimeSpan ComputeTtl(ExchangeRate? rate, DateOnly onOrBefore, DateOnly today)
     {
         // No rate in the window: a future publish/amendment could create one -> short.
         if (rate is null)
