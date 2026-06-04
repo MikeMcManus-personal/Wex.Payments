@@ -5,6 +5,26 @@ A production-style ASP.NET Core (.NET 10) service for the WEX coding exercise. I
 target currency** using the **U.S. Treasury Reporting Rates of Exchange** API,
 applying the exchange rate active for the purchase date.
 
+## Highlights for reviewers
+1. **Data Persistence** One of the main instructions was to be portable while still persisting data. This project uses an interface IPurchaseTransactionRepository 
+   to abstract a persistence layer so it can be immediately run. Another data store can easily be swapped in for it.
+2. **Scalability** This project is very similar to a real project I had once where we were calling EU data for VAT taxes. A significant
+   issue we were concerned with was scaling.
+   Scalaing is outside of this but I did decide to include an L1 cache because:
+    - There is only 170 or so countries and it's likely < 10% account for all activity
+    - An api like this can be used against an entire excel workbook or a quarterly update process massively.
+   The cache is there but IRL would not be the end of the scaling conversation. In fact because the system has to take into consideration
+   that the present quarter can be amended without warning, only previous quarters can be cached.
+3. **Observability** Otel is set up here along with structured tracing. It is going to stdout but adding the correct env vars and it should 
+   output to an observability framework.
+4. **Rounding** For rounding I went with AwayFromZero. It has been my experience that compliance and other cross-functional teams will want input on this.
+5. **Software Hardening** Items that are considered standard in produciton for this type of service are included such as resilience, logging, call level exception handling
+   via middleware. Details are below.
+6. **OpenAPI** Swagger is included but for security it is not published in release mode.
+7. **How to run** There is an .http file included the Wex.Payments.API project root that will allow a reviewer to easily run the api.
+
+
+
 > Treasury dataset:
 > <https://fiscaldata.treasury.gov/datasets/treasury-reporting-rates-exchange/treasury-reporting-rates-of-exchange>
 >
