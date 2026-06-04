@@ -1,6 +1,6 @@
 # Wex.Payments — Purchase Transaction & Currency Conversion API
 
-A production-style ASP.NET Core (.NET 9) service for the WEX coding exercise. It
+A production-style ASP.NET Core (.NET 10) service for the WEX coding exercise. It
 **stores purchase transactions in USD** and **retrieves them converted into a
 target currency** using the **U.S. Treasury Reporting Rates of Exchange** API,
 applying the exchange rate active for the purchase date.
@@ -118,7 +118,7 @@ src/
                       Public surface = one DI extension method.
   Wex.Payments.Api             Minimal API. Endpoints, request/response contracts,
                       FluentValidation (endpoint filter), ProblemDetails
-                      exception middleware, HTTP logging, Swagger UI.
+                      exception middleware, HTTP logging, OpenTelemetry, Swagger UI.
 tests/
   Wex.Payments.UnitTests        NUnit + Moq.
   Wex.Payments.IntegrationTests NUnit + WebApplicationFactory<Program>.
@@ -290,31 +290,69 @@ SQS-style async vs. edge caching), see the discussion in the project notes.
 
 ## Logging, resilience & observability
 
-- `HttpLogging` records method, path, query, status, and duration per request.
-- `PurchaseService` logs each store and each conversion (with the 6-month window),
-  and a warning when no rate is found.
-- `TreasuryExchangeRateProvider` logs the outbound filter and any upstream error.
+This service is wired for **drop-in observability on any OpenTelemetry (OTLP)
+backend** — the .NET Aspire dashboard, Grafana/Tempo, Jaeger, Application Insights,
+etc. — with no behavioral change to the API. The whole concern lives in the
+composition root (`Program.cs`); Core and Infrastructure stay vendor-neutral.
+
+### Structured, trace-correlated logging
+- **Structured console logs.** The console logger uses the **JSON** formatter by
+  default and the human-readable **`simple`** formatter in Development, both with
+  `IncludeScopes`. The default host enables `ActivityTrackingOptions =
+  TraceId|SpanId|ParentId`, so every log line carries the active **W3C trace id** as a
+  scope — logs, traces, and error payloads all line up on one id.
+- **Focused access log.** `HttpLogging` emits **one combined entry per request**
+  (`CombineLogs`) with method, path, query, status, and duration. A
+  `HealthCheckHttpLoggingInterceptor` suppresses it for the `/health` probe and the
+  Swagger UI, keeping the log on real API traffic.
+- **Domain/infra logs.** `PurchaseService` logs each store and conversion (with the
+  6-month window) and warns when no rate is found; `TreasuryExchangeRateProvider` logs
+  the outbound filter and any upstream error; `CachingExchangeRateProvider` logs
+  hit/miss/bypass at `Debug`.
+- **Errors correlate.** The `problem+json` body's `traceId` is the W3C
+  `Activity.Current?.TraceId` (falling back to the node-local id), so a failed response
+  points straight at its trace and log lines.
+
+### Resilience
 - **`Microsoft.Extensions.Http.Resilience`** standard pipeline (Polly v8) on the
   Treasury `HttpClient`: exponential-backoff-with-jitter retry on transient errors
   (5xx/408/429), per-attempt + total timeouts, and a failure-ratio circuit breaker.
   Retry count/delay and the per-attempt timeout are tunable via the `Treasury`
   options section, validated at startup.
 
-**Distributed tracing (intended).** Beyond the structured logs above, this service
-should export **traces** to an observability framework — **OpenTelemetry**, emitting
-OTLP to a collector/APM (e.g. Jaeger, Tempo, Application Insights). ASP.NET Core and
-`HttpClient` already produce `Activity` spans for the incoming request and the
-outbound Treasury call, so enabling this is purely additive: the exporter and
-instrumentation are wired in the **composition root (`Program.cs`)**, with the
-collector endpoint supplied via configuration — for example:
+### OpenTelemetry — traces, metrics & logs
+Auto-instrumentation is configured in `Program.cs`:
+- **Traces** — ASP.NET Core (the incoming request) and `HttpClient` (the Treasury
+  call) are auto-instrumented, so a request and its upstream call form **one
+  distributed trace**: the server span is the parent of the Treasury client span.
+- **Metrics** — HTTP server/client instruments, the **cache hit-rate** counter
+  `exchangerate.cache.lookups{result=hit|miss|bypass}`, and the **Polly resilience**
+  instruments (`resilience.polly.*`). The cache counter is emitted from Infrastructure
+  through the **in-box `System.Diagnostics.Metrics.Meter`** — that project takes **no
+  OpenTelemetry dependency**; the API subscribes by meter name
+  (`AddMeter("Wex.Payments.ExchangeRateCache")`).
+- **Logs** — `ILogger` output also flows through the OpenTelemetry pipeline, carrying
+  scopes (including the trace id).
 
-```csharp
-builder.Services.AddOpenTelemetry()
-    .WithTracing(t => t
-        .AddAspNetCoreInstrumentation()
-        .AddHttpClientInstrumentation()
-        .AddOtlpExporter());
-```
+**Exporters are environment-driven**, so the test suite stays offline and local dev
+needs zero infrastructure:
+
+| Environment | Traces & metrics | Logs |
+| --- | --- | --- |
+| **Development** | Console exporter | console logger (already trace-scoped; not re-exported, to avoid duplicate lines) |
+| **Testing** | none | none — the integration suite stays offline & deterministic |
+| **Otherwise** (Staging / Production / …) | OTLP | OTLP |
+
+**Out of the box the service ships no telemetry off-box.** Development prints traces and
+metrics to the console; Testing exports nothing — so no external collector is contacted
+by default. Exporting to a real backend is configuration-only, via the standard OTLP
+environment variables: `OTEL_EXPORTER_OTLP_ENDPOINT` for the target (default
+`http://localhost:4317`) and, for any hosted/authenticated collector, an API key or token
+supplied through `OTEL_EXPORTER_OTLP_HEADERS` (e.g. `Authorization=Bearer <token>` or
+`api-key=<key>`). No endpoint or credentials are committed to the repo. The simplest local
+target is the unauthenticated standalone **.NET Aspire dashboard** (OTLP on
+`localhost:4317`/`4318`), which needs no key — run the service in a
+non-Development/Production/Testing environment (e.g. `Staging`) to point at it.
 
 No domain or infrastructure changes are required; the cross-cutting concern stays at
 the edge, consistent with the rest of the architecture.
@@ -329,5 +367,22 @@ the edge, consistent with the rest of the architecture.
   "TimeoutSeconds": 30,
   "RetryCount": 3,
   "RetryBaseDelayMs": 200
+},
+"ExchangeRateCache": {
+  "RecentTtlMinutes": 60,
+  "HistoricalTtlHours": 24,
+  "NegativeTtlMinutes": 30,
+  "RecentWindowDays": 120
+},
+"Logging": {
+  "Console": {
+    "FormatterName": "json",
+    "FormatterOptions": { "IncludeScopes": true }
+  }
 }
 ```
+
+`appsettings.Development.json` switches the console formatter to `simple` for readable
+local output (still with scopes, so the trace id shows on every line). Observability
+exporters are environment-driven (see above); the OTLP target is set with the standard
+`OTEL_EXPORTER_OTLP_ENDPOINT` environment variable.

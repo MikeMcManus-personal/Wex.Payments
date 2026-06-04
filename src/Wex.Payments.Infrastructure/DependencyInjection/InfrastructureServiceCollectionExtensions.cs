@@ -61,7 +61,7 @@ public static class InfrastructureServiceCollectionExtensions
 
         // Decorate the Treasury provider with an in-memory cache. Rates are quarterly and
         // immutable once published, so this turns repeated identical lookups into cache hits
-        // and shields the Treasury API (and our request quota) from amplified load.
+        // and shields the Treasury API from amplified load or rate limiting.
         services.AddScoped<TreasuryExchangeRateProvider>();
         services.AddScoped<IExchangeRateProvider>(sp =>
             new CachingExchangeRateProvider(

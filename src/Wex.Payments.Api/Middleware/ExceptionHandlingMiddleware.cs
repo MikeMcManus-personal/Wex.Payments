@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Wex.Payments.Core.Exceptions;
@@ -88,7 +89,10 @@ public sealed class ExceptionHandlingMiddleware
             Detail = detail,
             Instance = context.Request.Path,
         };
-        problem.Extensions["traceId"] = context.TraceIdentifier;
+        // Prefer the W3C trace id so the error payload correlates with the distributed
+        // trace and the structured log scopes; fall back to the node-local id when no
+        // Activity is active (e.g. tracing disabled).
+        problem.Extensions["traceId"] = Activity.Current?.TraceId.ToString() ?? context.TraceIdentifier;
         if (extensions is not null)
         {
             foreach (var kvp in extensions)

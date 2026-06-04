@@ -1,3 +1,4 @@
+using System.Diagnostics.Metrics;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -10,8 +11,8 @@ namespace Wex.Payments.Infrastructure.Treasury;
 /// In-memory caching decorator over <see cref="IExchangeRateProvider"/>.
 /// <para>
 /// The Treasury rates_of_exchange dataset is quarterly and immutable once published
-/// (recent quarters may still be amended), so identical lookups dominate and cache hit
-/// rates are high. The TTL is chosen from the resolved <c>record_date</c>:
+/// (recent quarters may still be amended), so identical lookups may occur and cache hit
+/// rates could get high as use increases. The TTL is chosen from the resolved <c>record_date</c>:
 /// </para>
 /// <list type="bullet">
 /// <item>Current (unpublished) quarter or future-dated -&gt; bypass; always hit Treasury.</item>
@@ -27,6 +28,16 @@ namespace Wex.Payments.Infrastructure.Treasury;
 /// </summary>
 internal sealed class CachingExchangeRateProvider : IExchangeRateProvider
 {
+    // Process-wide metrics. The meter name is what the API subscribes to via
+    // AddMeter("Wex.Payments.ExchangeRateCache"); one dimensioned counter lets a backend
+    // derive hit-rate (hit / (hit + miss)) and track deliberate cache bypasses.
+    private static readonly Meter Meter = new("Wex.Payments.ExchangeRateCache");
+    private static readonly Counter<long> Lookups =
+        Meter.CreateCounter<long>(
+            "exchangerate.cache.lookups",
+            unit: "{lookup}",
+            description: "Exchange-rate cache lookups, tagged by result (hit, miss, bypass).");
+
     private readonly IExchangeRateProvider _inner;
     private readonly IMemoryCache _cache;
     private readonly ExchangeRateCacheOptions _options;
@@ -63,6 +74,7 @@ internal sealed class CachingExchangeRateProvider : IExchangeRateProvider
             _logger.LogDebug(
                 "Bypassing exchange-rate cache for {Currency} <= {Date} (current/unpublished quarter)",
                 countryCurrencyDesc, onOrBefore);
+            Lookups.Add(1, new KeyValuePair<string, object?>("result", "bypass"));
             return await _inner
                 .GetLatestRateOnOrBeforeAsync(countryCurrencyDesc, onOrBefore, notBefore, cancellationToken)
                 .ConfigureAwait(false);
@@ -74,6 +86,7 @@ internal sealed class CachingExchangeRateProvider : IExchangeRateProvider
         {
             _logger.LogDebug(
                 "Exchange-rate cache hit for {Currency} <= {Date}", countryCurrencyDesc, onOrBefore);
+            Lookups.Add(1, new KeyValuePair<string, object?>("result", "hit"));
             return cached.Rate;
         }
 
@@ -87,6 +100,7 @@ internal sealed class CachingExchangeRateProvider : IExchangeRateProvider
         _logger.LogDebug(
             "Exchange-rate cache miss for {Currency} <= {Date}; cached {Result} for {Ttl}",
             countryCurrencyDesc, onOrBefore, rate is null ? "negative" : "rate", ttl);
+        Lookups.Add(1, new KeyValuePair<string, object?>("result", "miss"));
 
         return rate;
     }
