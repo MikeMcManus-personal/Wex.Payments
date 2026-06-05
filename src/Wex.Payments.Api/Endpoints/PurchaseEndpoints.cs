@@ -70,11 +70,11 @@ public static class PurchaseEndpoints
         IPurchaseService service,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(currency))
+        if (!CurrencyQueryValidator.TryValidate(currency, out var currencyError))
         {
             return Results.ValidationProblem(new Dictionary<string, string[]>
             {
-                ["currency"] = ["The 'currency' query parameter is required (e.g. 'Canada-Dollar')."],
+                ["currency"] = [currencyError],
             });
         }
 

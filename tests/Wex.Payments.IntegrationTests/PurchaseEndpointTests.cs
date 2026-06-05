@@ -172,6 +172,33 @@ public sealed class PurchaseEndpointTests
     }
 
     [Test]
+    public async Task GetConverted_Returns400_WhenCurrencyContainsFilterDelimiters()
+    {
+        // ':' and ',' are Treasury filter-DSL delimiters; a value carrying them must be
+        // rejected at the edge (before any Treasury call) with a clean 400. Validation runs
+        // before the id lookup, so no stored purchase is needed.
+        var malicious = Uri.EscapeDataString("Brazil-Real,record_date:gte:2000-01-01");
+
+        var response = await _client.GetAsync($"{PurchasesUrl}/{Guid.NewGuid()}/converted?currency={malicious}");
+
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), body);
+        Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("application/problem+json"));
+        using var doc = JsonDocument.Parse(body);
+        Assert.That(doc.RootElement.GetProperty("errors").TryGetProperty("currency", out _), Is.True);
+    }
+
+    [Test]
+    public async Task GetConverted_Returns400_WhenCurrencyTooLong()
+    {
+        var tooLong = new string('a', 101); // one over the 100-char cap
+
+        var response = await _client.GetAsync($"{PurchasesUrl}/{Guid.NewGuid()}/converted?currency={tooLong}");
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+    }
+
+    [Test]
     public async Task Health_Returns200()
     {
         var response = await _client.GetAsync("/health");

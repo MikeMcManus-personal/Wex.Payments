@@ -19,10 +19,14 @@ applying the exchange rate active for the purchase date.
    output to an observability framework.
 4. **Rounding** For rounding I went with AwayFromZero. It has been my experience that compliance and other cross-functional teams will want input on this.
 5. **Software Hardening** Items that are considered standard in produciton for this type of service are included such as resilience, logging, call level exception handling
-   via middleware. Details are below.
+   via middleware. Inputs are sanitized. Details are below.
 6. **OpenAPI** Swagger is included but for security it is not published in release mode.
 7. **How to run** There is an .http file included the Wex.Payments.API project root that will allow a reviewer to easily run the api.
 
+
+
+
+---
 
 
 > Treasury dataset:
