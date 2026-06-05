@@ -10,7 +10,7 @@ applying the exchange rate active for the purchase date.
    to abstract a simple, temporary persistence layer so it can be immediately run. It is abstracted so another data store like NoSQL or SQL can easily be swapped in for it.
 2. **Scalability** This project is very similar to a real project I had once where we were calling EU data for VAT taxes. A significant
    issue we were concerned with was scaling, especially since we were calling a third party api we had no control over.
-   Scalaing is outside of the scope but I did decide to include an L1 cache because:
+   Scaling is outside of the scope but I did decide to include an L1 cache because:
     - There is only 170 or so countries and it's likely < 10% account for all activity
     - An api like this can be used against an entire excel workbook or a quarterly update process massively.
    The cache is there but IRL that would not be the end of the scaling conversation. Note that because the system has to take into consideration
@@ -18,7 +18,7 @@ applying the exchange rate active for the purchase date.
 3. **Observability** Otel is set up here along with structured tracing. It is going to stdout but adding the correct env vars and it could 
    output to an observability framework.
 4. **Rounding** For rounding I went with AwayFromZero. It has been my experience that compliance and other cross-functional teams will want input on this.
-5. **Software Hardening/Security** Items that are considered standard in produciton for this type of service are included such as resilience, logging, call level exception   handling via middleware. Inputs are sanitized. Details are below.
+5. **Software Hardening/Security** Items that are considered standard in production for this type of service are included such as resilience, logging, call level exception   handling via middleware. Inputs are sanitized. Details are below.
 6. **OpenAPI** Swagger is included but for security it is not published in release mode.
 7. **How to run** There is an .http file included the Wex.Payments.API project root that will allow a reviewer to easily run the api.
 
@@ -305,9 +305,6 @@ the same key each call Treasury until the first populates (fine at this load; a
 per-key lock or `HybridCache` removes it). This is an L1, per-instance cache; scaled
 out, each instance keeps its own copy. The clean upgrade is .NET's `HybridCache` with
 an L2 (Redis) behind the same interface — no Core changes.
-
-For a deeper treatment of decoupling at scale (caching vs. background refresh vs.
-SQS-style async vs. edge caching), see the discussion in the project notes.
 
 ---
 
