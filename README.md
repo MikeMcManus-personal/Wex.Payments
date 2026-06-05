@@ -7,7 +7,7 @@ applying the exchange rate active for the purchase date.
 
 ## Highlights for reviewers
 1. **Data Persistence** One of the main instructions was to be portable while still persisting data. This project uses an interface IPurchaseTransactionRepository 
-   to abstract a persistence layer so it can be immediately run. Another data store can easily be swapped in for it.
+   to abstract a simple, temporary persistence layer so it can be immediately run. It is abstracted so another data store like NoSQL or SQL can easily be swapped in for it.
 2. **Scalability** This project is very similar to a real project I had once where we were calling EU data for VAT taxes. A significant
    issue we were concerned with was scaling, especially since we were calling a third party api we had no control over.
    Scalaing is outside of the scope but I did decide to include an L1 cache because:
@@ -18,8 +18,7 @@ applying the exchange rate active for the purchase date.
 3. **Observability** Otel is set up here along with structured tracing. It is going to stdout but adding the correct env vars and it could 
    output to an observability framework.
 4. **Rounding** For rounding I went with AwayFromZero. It has been my experience that compliance and other cross-functional teams will want input on this.
-5. **Software Hardening/Security** Items that are considered standard in produciton for this type of service are included such as resilience, logging, call level exception handling
-   via middleware. Inputs are sanitized. Details are below.
+5. **Software Hardening/Security** Items that are considered standard in produciton for this type of service are included such as resilience, logging, call level exception   handling via middleware. Inputs are sanitized. Details are below.
 6. **OpenAPI** Swagger is included but for security it is not published in release mode.
 7. **How to run** There is an .http file included the Wex.Payments.API project root that will allow a reviewer to easily run the api.
 
